@@ -1,0 +1,348 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { WebSocketServer } from "ws";
+import bcrypt from "bcrypt";
+import { storage } from "./storage";
+import { insertHospitalUserSchema, insertSupplierUserSchema } from "@shared/schema";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  const httpServer = createServer(app);
+  
+  // WebSocket server for real-time updates
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws) => {
+    console.log('WebSocket connection established');
+    
+    ws.on('message', (message) => {
+      console.log('Received:', message.toString());
+    });
+    
+    ws.on('close', () => {
+      console.log('WebSocket connection closed');
+    });
+  });
+
+  // Hospital Authentication Routes
+  app.post('/api/hospital/register', async (req, res) => {
+    try {
+      const userData = insertHospitalUserSchema.parse(req.body);
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      const user = await storage.createHospitalUser({
+        ...userData,
+        password: hashedPassword,
+      });
+      
+      res.json({ success: true, user: { ...user, password: undefined } });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/hospital/login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      const user = await storage.getHospitalUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
+      const hospital = await storage.getHospital(user.hospitalId!);
+      
+      res.json({ 
+        success: true, 
+        user: { ...user, password: undefined },
+        hospital 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Supplier Authentication Routes
+  app.post('/api/supplier/register', async (req, res) => {
+    try {
+      const userData = insertSupplierUserSchema.parse(req.body);
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      const user = await storage.createSupplierUser({
+        ...userData,
+        password: hashedPassword,
+      });
+      
+      res.json({ success: true, user: { ...user, password: undefined } });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/supplier/login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      const user = await storage.getSupplierUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
+      const supplier = await storage.getSupplier(user.supplierId!);
+      
+      res.json({ 
+        success: true, 
+        user: { ...user, password: undefined },
+        supplier 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Hospital Dashboard Routes
+  app.get('/api/hospital/:id/dashboard', async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const stats = await storage.getHospitalDashboardStats(hospitalId);
+      const lowStockItems = await storage.getLowStockItems(hospitalId);
+      const recentOrders = await storage.getHospitalOrders(hospitalId);
+      const quotations = await storage.getHospitalQuotations(hospitalId);
+      
+      res.json({
+        stats,
+        lowStockItems: lowStockItems.slice(0, 5),
+        recentOrders: recentOrders.slice(0, 5),
+        quotations: quotations.slice(0, 5),
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/hospital/:id/inventory', async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const inventory = await storage.getHospitalInventory(hospitalId);
+      res.json(inventory);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/hospital/:id/orders', async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const orders = await storage.getHospitalOrders(hospitalId);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/hospital/:id/orders', async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const orderData = {
+        ...req.body,
+        hospitalId,
+        status: 'pending',
+        priority: req.body.priority || 'standard',
+      };
+      
+      const order = await storage.createOrder(orderData);
+      
+      // Broadcast to suppliers via WebSocket
+      wss.clients.forEach((client) => {
+        if (client.readyState === client.OPEN) {
+          client.send(JSON.stringify({
+            type: 'new_order',
+            data: order,
+          }));
+        }
+      });
+      
+      res.json(order);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/hospital/:id/quotations', async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const quotations = await storage.getHospitalQuotations(hospitalId);
+      res.json(quotations);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/hospital/quotations/:id/accept', async (req, res) => {
+    try {
+      const quotationId = parseInt(req.params.id);
+      const quotation = await storage.getQuotation(quotationId);
+      
+      if (!quotation) {
+        return res.status(404).json({ error: 'Quotation not found' });
+      }
+      
+      await storage.updateQuotationStatus(quotationId, 'accepted');
+      
+      // Create Purchase Order
+      const purchaseOrder = await storage.createPurchaseOrder({
+        orderId: quotation.orderId,
+        quotationId: quotationId,
+        hospitalId: quotation.hospitalId,
+        supplierId: quotation.supplierId,
+        status: 'created',
+        totalAmount: quotation.totalAmount!,
+        deliveryAddress: req.body.deliveryAddress,
+        expectedDeliveryDate: req.body.expectedDeliveryDate,
+        createdBy: req.body.createdBy,
+      });
+      
+      // Broadcast to supplier
+      wss.clients.forEach((client) => {
+        if (client.readyState === client.OPEN) {
+          client.send(JSON.stringify({
+            type: 'purchase_order_created',
+            data: purchaseOrder,
+          }));
+        }
+      });
+      
+      res.json(purchaseOrder);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Supplier Dashboard Routes
+  app.get('/api/supplier/:id/dashboard', async (req, res) => {
+    try {
+      const supplierId = parseInt(req.params.id);
+      const stats = await storage.getSupplierDashboardStats(supplierId);
+      const pendingQuotations = await storage.getPendingQuotations(supplierId);
+      const purchaseOrders = await storage.getSupplierPurchaseOrders(supplierId);
+      const inventory = await storage.getSupplierInventory(supplierId);
+      
+      res.json({
+        stats,
+        pendingQuotations: pendingQuotations.slice(0, 5),
+        purchaseOrders: purchaseOrders.slice(0, 5),
+        inventory: inventory.slice(0, 10),
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/supplier/:id/inventory', async (req, res) => {
+    try {
+      const supplierId = parseInt(req.params.id);
+      const inventory = await storage.getSupplierInventory(supplierId);
+      res.json(inventory);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put('/api/supplier/:id/inventory/:medicineId', async (req, res) => {
+    try {
+      const supplierId = parseInt(req.params.id);
+      const medicineId = parseInt(req.params.medicineId);
+      const { quantity, price } = req.body;
+      
+      await storage.updateSupplierStock(supplierId, medicineId, quantity, price);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/supplier/:id/quotations', async (req, res) => {
+    try {
+      const supplierId = parseInt(req.params.id);
+      const quotations = await storage.getPendingQuotations(supplierId);
+      res.json(quotations);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/supplier/quotations', async (req, res) => {
+    try {
+      const quotationData = {
+        ...req.body,
+        status: 'submitted',
+        submittedAt: new Date(),
+      };
+      
+      const quotation = await storage.createQuotation(quotationData);
+      
+      // Broadcast to hospital
+      wss.clients.forEach((client) => {
+        if (client.readyState === client.OPEN) {
+          client.send(JSON.stringify({
+            type: 'quotation_received',
+            data: quotation,
+          }));
+        }
+      });
+      
+      res.json(quotation);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/supplier/:id/orders', async (req, res) => {
+    try {
+      const supplierId = parseInt(req.params.id);
+      const orders = await storage.getSupplierPurchaseOrders(supplierId);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // General Routes
+  app.get('/api/medicines', async (req, res) => {
+    try {
+      const medicines = await storage.getAllMedicines();
+      res.json(medicines);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/hospitals', async (req, res) => {
+    try {
+      const hospitals = await storage.getAllHospitals();
+      res.json(hospitals);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/suppliers', async (req, res) => {
+    try {
+      const suppliers = await storage.getAllSuppliers();
+      res.json(suppliers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  return httpServer;
+}
