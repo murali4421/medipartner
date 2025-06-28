@@ -47,7 +47,7 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
               <Hospital className="text-white text-xl" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-secondary">MedSupply Pro</h1>
+              <h1 className="text-xl font-semibold text-secondary">Medi Partner</h1>
               <p className="text-sm text-gray-500">Hospital Management System</p>
             </div>
           </div>

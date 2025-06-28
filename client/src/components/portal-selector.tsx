@@ -10,7 +10,7 @@ export default function PortalSelector() {
     <div className="min-h-screen bg-neutral flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-secondary mb-4">MedSupply Pro</h1>
+          <h1 className="text-4xl font-bold text-secondary mb-4">Medi Partner</h1>
           <p className="text-lg text-gray-600">Medicine Supply Chain Management System</p>
         </div>
 

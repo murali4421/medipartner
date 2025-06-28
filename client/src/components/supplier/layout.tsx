@@ -46,7 +46,7 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
               <Truck className="text-white text-xl" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-secondary">MedSupply Pro</h1>
+              <h1 className="text-xl font-semibold text-secondary">Medi Partner</h1>
               <p className="text-sm text-gray-500">Supplier Management System</p>
             </div>
           </div>
