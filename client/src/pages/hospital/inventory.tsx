@@ -100,8 +100,18 @@ export default function HospitalInventory() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to add inventory");
+        let errorMessage = "Failed to add inventory";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          // If JSON parsing fails, use response text
+          const errorText = await response.text();
+          console.error("Response parsing error:", jsonError);
+          console.error("Response text:", errorText);
+          errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
       
       return response.json();
@@ -150,8 +160,18 @@ export default function HospitalInventory() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update inventory");
+        let errorMessage = "Failed to update inventory";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          // If JSON parsing fails, use response text
+          const errorText = await response.text();
+          console.error("Response parsing error:", jsonError);
+          console.error("Response text:", errorText);
+          errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
       
       return response.json();

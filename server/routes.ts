@@ -142,14 +142,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add new inventory item
   app.post('/api/hospital/:id/inventory', async (req, res) => {
     try {
+      console.log('POST /api/hospital/:id/inventory - Request body:', req.body);
+      
       const hospitalId = parseInt(req.params.id);
       
       if (!hospitalId || isNaN(hospitalId)) {
+        console.error('Invalid hospital ID:', req.params.id);
         return res.status(400).json({ error: 'Invalid hospital ID' });
       }
       
       const medicineId = parseInt(req.body.medicineId);
       if (!medicineId || isNaN(medicineId)) {
+        console.error('Invalid medicine ID:', req.body.medicineId);
         return res.status(400).json({ error: 'Invalid medicine ID' });
       }
       
@@ -199,15 +203,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update inventory item
   app.put('/api/hospital/:id/inventory/:itemId', async (req, res) => {
     try {
+      console.log('PUT /api/hospital/:id/inventory/:itemId - Request body:', req.body);
+      
       const hospitalId = parseInt(req.params.id);
       const itemId = parseInt(req.params.itemId);
       
       if (!hospitalId || isNaN(hospitalId)) {
+        console.error('Invalid hospital ID:', req.params.id);
         return res.status(400).json({ error: 'Invalid hospital ID' });
       }
       
       const medicineId = parseInt(req.body.medicineId);
       if (!medicineId || isNaN(medicineId)) {
+        console.error('Invalid medicine ID:', req.body.medicineId);
         return res.status(400).json({ error: 'Invalid medicine ID' });
       }
       

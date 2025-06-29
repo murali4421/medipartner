@@ -253,6 +253,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateHospitalInventoryItem(hospitalId: number, medicineId: number, data: any): Promise<void> {
+    console.log('updateHospitalInventoryItem called with:', { hospitalId, medicineId, data });
+    
     // Check if inventory item exists
     const existing = await db
       .select()
@@ -263,6 +265,8 @@ export class DatabaseStorage implements IStorage {
           eq(hospitalInventory.medicineId, medicineId)
         )
       );
+
+    console.log('Existing inventory records:', existing);
 
     const updateData = {
       currentStock: data.currentStock || 0,
@@ -275,6 +279,8 @@ export class DatabaseStorage implements IStorage {
       location: data.location || '',
       lastUpdated: new Date()
     };
+
+    console.log('Prepared update data:', updateData);
 
     if (existing.length > 0) {
       // Update existing inventory
