@@ -42,6 +42,7 @@ export interface IStorage {
   getHospitalInventory(hospitalId: number): Promise<any[]>;
   getLowStockItems(hospitalId: number): Promise<any[]>;
   updateHospitalStock(hospitalId: number, medicineId: number, quantity: number): Promise<void>;
+  updateHospitalInventoryItem(hospitalId: number, medicineId: number, data: any): Promise<void>;
   
   // Supplier Inventory
   getSupplierInventory(supplierId: number): Promise<any[]>;
@@ -208,18 +209,101 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateHospitalStock(hospitalId: number, medicineId: number, quantity: number): Promise<void> {
-    await db
-      .update(hospitalInventory)
-      .set({ 
-        currentStock: sql`${hospitalInventory.currentStock} + ${quantity}`,
-        lastUpdated: new Date()
-      })
+    // Check if inventory item exists
+    const existing = await db
+      .select()
+      .from(hospitalInventory)
       .where(
         and(
           eq(hospitalInventory.hospitalId, hospitalId),
           eq(hospitalInventory.medicineId, medicineId)
         )
       );
+
+    if (existing.length > 0) {
+      // Update existing inventory
+      await db
+        .update(hospitalInventory)
+        .set({ 
+          currentStock: quantity,
+          lastUpdated: new Date()
+        })
+        .where(
+          and(
+            eq(hospitalInventory.hospitalId, hospitalId),
+            eq(hospitalInventory.medicineId, medicineId)
+          )
+        );
+    } else {
+      // Insert new inventory item
+      await db
+        .insert(hospitalInventory)
+        .values({
+          hospitalId,
+          medicineId,
+          currentStock: quantity,
+          reorderPoint: 10,
+          maxStock: 100,
+          unitCost: '0',
+          batchNumber: '',
+          supplier: '',
+          location: ''
+        });
+    }
+  }
+
+  async updateHospitalInventoryItem(hospitalId: number, medicineId: number, data: any): Promise<void> {
+    // Check if inventory item exists
+    const existing = await db
+      .select()
+      .from(hospitalInventory)
+      .where(
+        and(
+          eq(hospitalInventory.hospitalId, hospitalId),
+          eq(hospitalInventory.medicineId, medicineId)
+        )
+      );
+
+    const updateData = {
+      currentStock: data.currentStock || 0,
+      reorderPoint: data.reorderPoint || 10,
+      maxStock: data.maxStock || 100,
+      unitCost: data.unitCost?.toString() || '0',
+      expiryDate: data.expiryDate || null,
+      batchNumber: data.batchNumber || '',
+      supplier: data.supplier || '',
+      location: data.location || '',
+      lastUpdated: new Date()
+    };
+
+    if (existing.length > 0) {
+      // Update existing inventory
+      await db
+        .update(hospitalInventory)
+        .set(updateData)
+        .where(
+          and(
+            eq(hospitalInventory.hospitalId, hospitalId),
+            eq(hospitalInventory.medicineId, medicineId)
+          )
+        );
+    } else {
+      // Insert new inventory item
+      await db
+        .insert(hospitalInventory)
+        .values({
+          hospitalId,
+          medicineId,
+          currentStock: updateData.currentStock,
+          reorderPoint: updateData.reorderPoint,
+          maxStock: updateData.maxStock,
+          unitCost: updateData.unitCost,
+          expiryDate: updateData.expiryDate,
+          batchNumber: updateData.batchNumber,
+          supplier: updateData.supplier,
+          location: updateData.location
+        });
+    }
   }
 
   async getSupplierInventory(supplierId: number): Promise<any[]> {

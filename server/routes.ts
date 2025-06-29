@@ -143,36 +143,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/hospital/:id/inventory', async (req, res) => {
     try {
       const hospitalId = parseInt(req.params.id);
-      const inventoryData = {
-        ...req.body,
-        hospitalId,
-        medicineId: parseInt(req.body.medicineId),
-      };
+      
+      if (!hospitalId || isNaN(hospitalId)) {
+        return res.status(400).json({ error: 'Invalid hospital ID' });
+      }
+      
+      const medicineId = parseInt(req.body.medicineId);
+      if (!medicineId || isNaN(medicineId)) {
+        return res.status(400).json({ error: 'Invalid medicine ID' });
+      }
       
       // First check if medicine already exists in hospital inventory
       const existingInventory = await storage.getHospitalInventory(hospitalId);
       const existingItem = existingInventory.find((item: any) => 
-        item.medicineId === inventoryData.medicineId
+        item.medicineId === medicineId
       );
       
-      if (existingItem) {
+      if (existingItem && existingItem.currentStock > 0) {
         return res.status(400).json({ error: 'Medicine already exists in inventory. Use edit to update.' });
       }
       
-      // Add to hospital inventory
-      await storage.updateHospitalStock(
+      // Create comprehensive inventory data
+      const inventoryData = {
+        hospitalId,
+        medicineId,
+        currentStock: Number(req.body.currentStock) || 0,
+        reorderPoint: Number(req.body.reorderPoint) || 10,
+        maxStock: Number(req.body.maxStock) || 100,
+        unitCost: Number(req.body.unitCost) || 0,
+        expiryDate: req.body.expiryDate || null,
+        batchNumber: req.body.batchNumber || '',
+        supplier: req.body.supplier || '',
+        location: req.body.location || '',
+      };
+      
+      // Add to hospital inventory with comprehensive data
+      await storage.updateHospitalInventoryItem(
         hospitalId, 
-        inventoryData.medicineId, 
-        inventoryData.currentStock
+        medicineId, 
+        inventoryData
       );
       
       const updatedInventory = await storage.getHospitalInventory(hospitalId);
       const newItem = updatedInventory.find((item: any) => 
-        item.medicineId === inventoryData.medicineId
+        item.medicineId === medicineId
       );
       
       res.json(newItem);
     } catch (error: any) {
+      console.error('Error adding inventory:', error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -181,24 +200,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/hospital/:id/inventory/:itemId', async (req, res) => {
     try {
       const hospitalId = parseInt(req.params.id);
+      const itemId = parseInt(req.params.itemId);
+      
+      if (!hospitalId || isNaN(hospitalId)) {
+        return res.status(400).json({ error: 'Invalid hospital ID' });
+      }
+      
+      const medicineId = parseInt(req.body.medicineId);
+      if (!medicineId || isNaN(medicineId)) {
+        return res.status(400).json({ error: 'Invalid medicine ID' });
+      }
+      
+      // Update hospital inventory with comprehensive data
       const inventoryData = {
-        ...req.body,
-        medicineId: parseInt(req.body.medicineId),
+        currentStock: Number(req.body.currentStock) || 0,
+        reorderPoint: Number(req.body.reorderPoint) || 10,
+        maxStock: Number(req.body.maxStock) || 100,
+        unitCost: Number(req.body.unitCost) || 0,
+        expiryDate: req.body.expiryDate || null,
+        batchNumber: req.body.batchNumber || "",
+        supplier: req.body.supplier || "",
+        location: req.body.location || "",
       };
       
-      await storage.updateHospitalStock(
+      await storage.updateHospitalInventoryItem(
         hospitalId, 
-        inventoryData.medicineId, 
-        inventoryData.currentStock
+        medicineId, 
+        inventoryData
       );
       
       const updatedInventory = await storage.getHospitalInventory(hospitalId);
       const updatedItem = updatedInventory.find((item: any) => 
-        item.medicineId === inventoryData.medicineId
+        item.medicineId === medicineId
       );
       
       res.json(updatedItem);
     } catch (error: any) {
+      console.error('Error updating inventory:', error);
       res.status(500).json({ error: error.message });
     }
   });

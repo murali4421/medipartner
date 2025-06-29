@@ -77,21 +77,33 @@ export default function HospitalInventory() {
   // Add inventory mutation
   const addInventoryMutation = useMutation({
     mutationFn: async (data: InventoryFormData) => {
-      const response = await fetch(`/api/hospital/${hospital?.id}/inventory`, {
+      if (!hospital?.id) {
+        throw new Error("Hospital ID is required");
+      }
+      
+      const response = await fetch(`/api/hospital/${hospital.id}/inventory`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...data,
-          hospitalId: hospital?.id,
-          currentStock: Number(data.currentStock),
-          reorderPoint: Number(data.reorderPoint),
-          maxStock: Number(data.maxStock),
-          unitCost: Number(data.unitCost),
+          medicineId: data.medicineId,
+          currentStock: Number(data.currentStock) || 0,
+          reorderPoint: Number(data.reorderPoint) || 10,
+          maxStock: Number(data.maxStock) || 100,
+          unitCost: Number(data.unitCost) || 0,
+          expiryDate: data.expiryDate || null,
+          batchNumber: data.batchNumber || "",
+          supplier: data.supplier || "",
+          location: data.location || "",
         }),
       });
-      if (!response.ok) throw new Error("Failed to add inventory");
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to add inventory");
+      }
+      
       return response.json();
     },
     onSuccess: () => {
@@ -115,20 +127,33 @@ export default function HospitalInventory() {
   // Update inventory mutation
   const updateInventoryMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: InventoryFormData }) => {
-      const response = await fetch(`/api/hospital/${hospital?.id}/inventory/${id}`, {
+      if (!hospital?.id) {
+        throw new Error("Hospital ID is required");
+      }
+      
+      const response = await fetch(`/api/hospital/${hospital.id}/inventory/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...data,
-          currentStock: Number(data.currentStock),
-          reorderPoint: Number(data.reorderPoint),
-          maxStock: Number(data.maxStock),
-          unitCost: Number(data.unitCost),
+          medicineId: data.medicineId,
+          currentStock: Number(data.currentStock) || 0,
+          reorderPoint: Number(data.reorderPoint) || 10,
+          maxStock: Number(data.maxStock) || 100,
+          unitCost: Number(data.unitCost) || 0,
+          expiryDate: data.expiryDate || null,
+          batchNumber: data.batchNumber || "",
+          supplier: data.supplier || "",
+          location: data.location || "",
         }),
       });
-      if (!response.ok) throw new Error("Failed to update inventory");
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update inventory");
+      }
+      
       return response.json();
     },
     onSuccess: () => {

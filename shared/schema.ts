@@ -102,6 +102,8 @@ export const hospitalInventory = pgTable("hospital_inventory", {
   unitCost: decimal("unit_cost", { precision: 10, scale: 2 }),
   batchNumber: text("batch_number"),
   expiryDate: timestamp("expiry_date"),
+  supplier: text("supplier"),
+  location: text("location"),
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
