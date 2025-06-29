@@ -14,7 +14,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  PillBottle
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
@@ -30,6 +31,7 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
   const navigation = [
     { name: 'Dashboard', href: '/supplier/dashboard', icon: BarChart3 },
     { name: 'Medicine Catalog', href: '/supplier/catalog', icon: Package },
+    { name: 'Medicine Master', href: '/supplier/medicine-master', icon: PillBottle },
     { name: 'Quotations', href: '/supplier/quotations', icon: FileText },
     { name: 'Purchase Orders', href: '/supplier/orders', icon: ShoppingCart },
     { name: 'Deliveries', href: '/supplier/deliveries', icon: Truck },

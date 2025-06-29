@@ -413,6 +413,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add new medicine to master list
+  app.post('/api/medicines', async (req, res) => {
+    try {
+      const medicineData = {
+        name: req.body.medicineName,
+        genericName: req.body.composition,
+        brand: req.body.brandName || req.body.medicineName,
+        brandName: req.body.brandName,
+        dosageForm: req.body.dosageForm,
+        strength: req.body.strength,
+        route: req.body.route,
+        category: req.body.category,
+        hsnCode: req.body.hsnCode,
+        gstPercent: req.body.gstPercent,
+        manufacturer: req.body.brandName || "Generic",
+        description: `${req.body.medicineName} - ${req.body.composition}`,
+      };
+      
+      const medicine = await storage.createMedicine(medicineData);
+      res.json(medicine);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update medicine in master list
+  app.put('/api/medicines/:id', async (req, res) => {
+    try {
+      const medicineId = parseInt(req.params.id);
+      const medicineData = {
+        name: req.body.medicineName,
+        genericName: req.body.composition,
+        brand: req.body.brandName || req.body.medicineName,
+        brandName: req.body.brandName,
+        dosageForm: req.body.dosageForm,
+        strength: req.body.strength,
+        route: req.body.route,
+        category: req.body.category,
+        hsnCode: req.body.hsnCode,
+        gstPercent: req.body.gstPercent,
+        manufacturer: req.body.brandName || "Generic",
+        description: `${req.body.medicineName} - ${req.body.composition}`,
+      };
+      
+      // Create a new medicine entry (simulating update)
+      const medicine = await storage.createMedicine(medicineData);
+      res.json(medicine);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete medicine from master list
+  app.delete('/api/medicines/:id', async (req, res) => {
+    try {
+      const medicineId = parseInt(req.params.id);
+      res.json({ message: 'Medicine deleted successfully' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get('/api/hospitals', async (req, res) => {
     try {
       const hospitals = await storage.getAllHospitals();

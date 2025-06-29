@@ -15,7 +15,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  Package
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
@@ -31,6 +32,7 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
   const navigation = [
     { name: 'Dashboard', href: '/hospital/dashboard', icon: BarChart3 },
     { name: 'Inventory', href: '/hospital/inventory', icon: PillBottle },
+    { name: 'Medicine Master', href: '/hospital/medicine-master', icon: Package },
     { name: 'Orders', href: '/hospital/orders', icon: ShoppingCart },
     { name: 'Quotations', href: '/hospital/quotations', icon: FileText },
     { name: 'Deliveries', href: '/hospital/deliveries', icon: Truck },
