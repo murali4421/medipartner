@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import HospitalLayout from "@/components/hospital/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +37,7 @@ interface SettlementFormData {
   dueDate: string;
 }
 
-export default function Settlements() {
+function Settlements() {
   const { hospital } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -154,7 +155,8 @@ export default function Settlements() {
   }
 
   return (
-    <div className="space-y-6">
+    <HospitalLayout>
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -506,6 +508,9 @@ export default function Settlements() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </HospitalLayout>
   );
 }
+
+export default Settlements;
