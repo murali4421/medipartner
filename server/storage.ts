@@ -507,9 +507,19 @@ export class DatabaseStorage implements IStorage {
 
   async createPurchaseOrder(insertPO: InsertPurchaseOrder): Promise<PurchaseOrder> {
     const poNumber = `PO-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+    
+    // Ensure expectedDeliveryDate is properly handled
+    const poData = {
+      ...insertPO,
+      poNumber,
+      expectedDeliveryDate: insertPO.expectedDeliveryDate instanceof Date 
+        ? insertPO.expectedDeliveryDate 
+        : new Date(insertPO.expectedDeliveryDate || Date.now() + 7 * 24 * 60 * 60 * 1000)
+    };
+    
     const [po] = await db
       .insert(purchaseOrders)
-      .values({ ...insertPO, poNumber })
+      .values(poData)
       .returning();
     return po;
   }

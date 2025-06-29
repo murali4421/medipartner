@@ -1,8 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { WebSocketServer } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
+import { db } from "./db";
+import { quotations, orders } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { insertHospitalUserSchema, insertSupplierUserSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -339,30 +342,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/hospital/quotations/:id/accept', async (req, res) => {
     try {
       const quotationId = parseInt(req.params.id);
+      
+      // Get quotation
       const quotation = await storage.getQuotation(quotationId);
       
       if (!quotation) {
         return res.status(404).json({ error: 'Quotation not found' });
       }
       
+      // Get the order to find hospitalId
+      if (!quotation.orderId) {
+        return res.status(400).json({ error: 'Invalid quotation: missing order ID' });
+      }
+      
+      const order = await storage.getOrder(quotation.orderId);
+      
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+      
       await storage.updateQuotationStatus(quotationId, 'accepted');
       
-      // Create Purchase Order
+      // Create Purchase Order with proper date handling
+      const expectedDeliveryDate = req.body.expectedDeliveryDate ? 
+        new Date(req.body.expectedDeliveryDate) : 
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      
       const purchaseOrder = await storage.createPurchaseOrder({
         orderId: quotation.orderId,
         quotationId: quotationId,
-        hospitalId: quotation.hospitalId,
-        supplierId: quotation.supplierId,
+        hospitalId: order.hospitalId || 1,
+        supplierId: quotation.supplierId || 1,
         status: 'created',
-        totalAmount: quotation.totalAmount!,
-        deliveryAddress: req.body.deliveryAddress,
-        expectedDeliveryDate: req.body.expectedDeliveryDate,
-        createdBy: req.body.createdBy,
+        totalAmount: quotation.totalAmount?.toString() || '0',
+        deliveryAddress: req.body.deliveryAddress || '',
+        expectedDeliveryDate,
+        createdBy: req.body.createdBy || 1,
       });
       
       // Broadcast to supplier
       wss.clients.forEach((client) => {
-        if (client.readyState === client.OPEN) {
+        if (client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify({
             type: 'purchase_order_created',
             data: purchaseOrder,
@@ -372,6 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(purchaseOrder);
     } catch (error: any) {
+      console.error('Error accepting quotation:', error);
       res.status(500).json({ error: error.message });
     }
   });
