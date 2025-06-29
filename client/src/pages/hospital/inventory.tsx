@@ -198,10 +198,25 @@ export default function HospitalInventory() {
   // Delete inventory mutation
   const deleteInventoryMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/hospital/${hospital?.id}/inventory/${id}`, {
+      if (!hospital?.id) {
+        throw new Error("Hospital ID is required");
+      }
+      
+      const response = await fetch(`/api/hospital/${hospital.id}/inventory/${id}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Failed to delete inventory");
+      
+      if (!response.ok) {
+        let errorMessage = "Failed to delete inventory";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+      
       return response.json();
     },
     onSuccess: () => {

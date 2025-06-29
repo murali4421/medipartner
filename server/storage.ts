@@ -43,6 +43,7 @@ export interface IStorage {
   getLowStockItems(hospitalId: number): Promise<any[]>;
   updateHospitalStock(hospitalId: number, medicineId: number, quantity: number): Promise<void>;
   updateHospitalInventoryItem(hospitalId: number, medicineId: number, data: any): Promise<void>;
+  deleteHospitalInventoryItem(hospitalId: number, itemId: number): Promise<void>;
   
   // Supplier Inventory
   getSupplierInventory(supplierId: number): Promise<any[]>;
@@ -179,6 +180,8 @@ export class DatabaseStorage implements IStorage {
         unitCost: hospitalInventory.unitCost,
         batchNumber: hospitalInventory.batchNumber,
         expiryDate: hospitalInventory.expiryDate,
+        supplier: hospitalInventory.supplier,
+        location: hospitalInventory.location,
         lastUpdated: hospitalInventory.lastUpdated,
       })
       .from(hospitalInventory)
@@ -305,6 +308,17 @@ export class DatabaseStorage implements IStorage {
           location: updateData.location
         });
     }
+  }
+
+  async deleteHospitalInventoryItem(hospitalId: number, itemId: number): Promise<void> {
+    await db
+      .delete(hospitalInventory)
+      .where(
+        and(
+          eq(hospitalInventory.hospitalId, hospitalId),
+          eq(hospitalInventory.id, itemId)
+        )
+      );
   }
 
   async getSupplierInventory(supplierId: number): Promise<any[]> {

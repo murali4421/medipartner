@@ -247,19 +247,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hospitalId = parseInt(req.params.id);
       const itemId = parseInt(req.params.itemId);
       
-      // Find the inventory item to get medicine ID
-      const inventory = await storage.getHospitalInventory(hospitalId);
-      const item = inventory.find((inv: any) => inv.id === itemId);
-      
-      if (!item) {
-        return res.status(404).json({ error: 'Inventory item not found' });
+      if (!hospitalId || isNaN(hospitalId)) {
+        return res.status(400).json({ error: 'Invalid hospital ID' });
       }
       
-      // Set stock to 0 to effectively remove the item
-      await storage.updateHospitalStock(hospitalId, item.medicineId, 0);
+      if (!itemId || isNaN(itemId)) {
+        return res.status(400).json({ error: 'Invalid item ID' });
+      }
+      
+      // Delete the inventory item
+      await storage.deleteHospitalInventoryItem(hospitalId, itemId);
       
       res.json({ message: 'Inventory item deleted successfully' });
     } catch (error: any) {
+      console.error('Error deleting inventory:', error);
       res.status(500).json({ error: error.message });
     }
   });
