@@ -15,6 +15,7 @@ import HospitalMedicineMaster from "@/pages/hospital/medicine-master";
 import HospitalOrders from "@/pages/hospital/orders";
 import HospitalQuotations from "@/pages/hospital/quotations";
 import HospitalSuppliers from "@/pages/hospital/suppliers";
+import HospitalSettlements from "@/pages/hospital/settlements";
 
 // Supplier Pages
 import SupplierLogin from "@/pages/supplier/login";
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/hospital/orders" component={HospitalOrders} />
       <Route path="/hospital/quotations" component={HospitalQuotations} />
       <Route path="/hospital/suppliers" component={HospitalSuppliers} />
+      <Route path="/hospital/settlements" component={HospitalSettlements} />
       
       {/* Supplier Routes */}
       <Route path="/supplier/login" component={SupplierLogin} />

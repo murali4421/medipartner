@@ -569,5 +569,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get available medicines from all suppliers (stock > 0)
+  app.get('/api/suppliers/available-medicines', async (req, res) => {
+    try {
+      const availableMedicines = await storage.getAvailableMedicinesFromSuppliers();
+      res.json(availableMedicines);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Hospital Settlements Routes
+  app.get('/api/hospital/:id/settlements', async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const settlements = await storage.getHospitalSettlements(hospitalId);
+      res.json(settlements);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/hospital/:id/settlements', async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      
+      if (!hospitalId || isNaN(hospitalId)) {
+        return res.status(400).json({ error: 'Invalid hospital ID' });
+      }
+
+      const settlementData = {
+        ...req.body,
+        hospitalId,
+        status: 'pending',
+        createdAt: new Date(),
+      };
+      
+      const settlement = await storage.createSettlement(settlementData);
+      res.json(settlement);
+    } catch (error: any) {
+      console.error('Error creating settlement:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

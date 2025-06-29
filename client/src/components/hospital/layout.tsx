@@ -37,8 +37,9 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
     { name: 'Quotations', href: '/hospital/quotations', icon: FileText },
     { name: 'Deliveries', href: '/hospital/deliveries', icon: Truck },
     { name: 'Payments', href: '/hospital/payments', icon: CreditCard },
-    { name: 'Reports', href: '/hospital/reports', icon: TrendingUp },
     { name: 'Suppliers', href: '/hospital/suppliers', icon: Users },
+    { name: 'Settlements', href: '/hospital/settlements', icon: CreditCard },
+    { name: 'Reports', href: '/hospital/reports', icon: TrendingUp },
     { name: 'Settings', href: '/hospital/settings', icon: Settings },
   ];
 

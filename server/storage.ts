@@ -79,6 +79,13 @@ export interface IStorage {
   createNotification(type: string, userId: number, title: string, message: string, data?: any): Promise<void>;
   getUserNotifications(type: string, userId: number): Promise<any[]>;
   markNotificationRead(id: number): Promise<void>;
+  
+  // Available Medicines
+  getAvailableMedicinesFromSuppliers(): Promise<any[]>;
+  
+  // Settlements
+  getHospitalSettlements(hospitalId: number): Promise<any[]>;
+  createSettlement(settlement: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -616,6 +623,46 @@ export class DatabaseStorage implements IStorage {
 
   async markNotificationRead(id: number): Promise<void> {
     await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, id));
+  }
+
+  async getAvailableMedicinesFromSuppliers(): Promise<any[]> {
+    const result = await db
+      .select({
+        supplierId: supplierInventory.supplierId,
+        medicineId: supplierInventory.medicineId,
+        quantity: supplierInventory.quantity,
+        price: supplierInventory.price,
+        medicineName: medicines.name,
+        brandName: medicines.brandName,
+        dosageForm: medicines.dosageForm,
+        strength: medicines.strength,
+        supplierName: suppliers.name,
+      })
+      .from(supplierInventory)
+      .innerJoin(medicines, eq(supplierInventory.medicineId, medicines.id))
+      .innerJoin(suppliers, eq(supplierInventory.supplierId, suppliers.id))
+      .where(sql`${supplierInventory.quantity} > 0`)
+      .orderBy(suppliers.name, medicines.name);
+
+    return result;
+  }
+
+  async getHospitalSettlements(hospitalId: number): Promise<any[]> {
+    // For now, return empty array as settlements table might not exist yet
+    // This can be expanded when settlements table is added to schema
+    return [];
+  }
+
+  async createSettlement(settlement: any): Promise<any> {
+    // For now, return mock settlement data
+    // This can be expanded when settlements table is added to schema
+    const mockSettlement = {
+      id: Date.now(),
+      ...settlement,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    return mockSettlement;
   }
 }
 
