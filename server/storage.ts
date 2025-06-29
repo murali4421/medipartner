@@ -457,23 +457,48 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getHospitalQuotations(hospitalId: number): Promise<any[]> {
-    return await db
+    const result = await db
       .select({
         id: quotations.id,
         quotationNumber: quotations.quotationNumber,
         orderId: quotations.orderId,
         orderNumber: orders.orderNumber,
+        supplierId: quotations.supplierId,
         supplierName: suppliers.name,
         status: quotations.status,
         totalAmount: quotations.totalAmount,
+        deliveryTerms: quotations.deliveryTerms,
+        paymentTerms: quotations.paymentTerms,
         validUntil: quotations.validUntil,
-        submittedAt: quotations.submittedAt,
+        notes: quotations.notes,
+        createdAt: quotations.createdAt,
       })
       .from(quotations)
       .innerJoin(orders, eq(quotations.orderId, orders.id))
       .innerJoin(suppliers, eq(quotations.supplierId, suppliers.id))
-      .where(eq(quotations.hospitalId, hospitalId))
+      .where(eq(orders.hospitalId, hospitalId))
       .orderBy(desc(quotations.createdAt));
+
+    // Get quotation items for each quotation
+    const quotationsWithItems = await Promise.all(
+      result.map(async (quotation) => {
+        const items = await db
+          .select({
+            medicineId: quotationItems.medicineId,
+            medicineName: medicines.name,
+            quantity: quotationItems.quantity,
+            unitPrice: quotationItems.unitPrice,
+            totalPrice: quotationItems.totalPrice,
+          })
+          .from(quotationItems)
+          .innerJoin(medicines, eq(quotationItems.medicineId, medicines.id))
+          .where(eq(quotationItems.quotationId, quotation.id));
+
+        return { ...quotation, items };
+      })
+    );
+
+    return quotationsWithItems;
   }
 
   async updateQuotationStatus(id: number, status: string): Promise<void> {

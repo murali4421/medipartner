@@ -27,6 +27,10 @@ export default function SupplierQuotations() {
   const { toast } = useToast();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isQuotationDialogOpen, setIsQuotationDialogOpen] = useState(false);
+  const [selectedQuotation, setSelectedQuotation] = useState<any>(null);
+  const [isQuotationDetailOpen, setIsQuotationDetailOpen] = useState(false);
+  const [selectedProcessedOrder, setSelectedProcessedOrder] = useState<any>(null);
+  const [isProcessedOrderDetailOpen, setIsProcessedOrderDetailOpen] = useState(false);
   const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([]);
   const [quotationForm, setQuotationForm] = useState({
     deliveryTerms: "",
@@ -315,7 +319,14 @@ export default function SupplierQuotations() {
             ) : (
               <div className="space-y-4">
                 {submittedQuotations.map((quotation: any) => (
-                  <Card key={quotation.id} className="card-gradient border-0 shadow-lg">
+                  <Card 
+                    key={quotation.id} 
+                    className="card-gradient border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+                    onClick={() => {
+                      setSelectedQuotation(quotation);
+                      setIsQuotationDetailOpen(true);
+                    }}
+                  >
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div>
@@ -324,9 +335,12 @@ export default function SupplierQuotations() {
                           </CardTitle>
                           <p className="text-gray-600">Order #{quotation.orderNumber}</p>
                         </div>
-                        <Badge variant={quotation.status === 'accepted' ? 'default' : 'secondary'}>
-                          {quotation.status?.toUpperCase()}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={quotation.status === 'accepted' ? 'default' : 'secondary'}>
+                            {quotation.status?.toUpperCase()}
+                          </Badge>
+                          <Eye className="h-4 w-4 text-gray-500" />
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -369,7 +383,14 @@ export default function SupplierQuotations() {
             ) : (
               <div className="space-y-4">
                 {processedOrders.filter(o => o.status === 'rejected').map((order: any) => (
-                  <Card key={order.id} className="border-red-200 bg-red-50">
+                  <Card 
+                    key={order.id} 
+                    className="border-red-200 bg-red-50 cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => {
+                      setSelectedProcessedOrder(order);
+                      setIsProcessedOrderDetailOpen(true);
+                    }}
+                  >
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
                         <div>
@@ -387,7 +408,10 @@ export default function SupplierQuotations() {
                             </div>
                           </div>
                         </div>
-                        <Badge variant="destructive">REJECTED</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="destructive">REJECTED</Badge>
+                          <Eye className="h-4 w-4 text-gray-500" />
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -435,7 +459,14 @@ export default function SupplierQuotations() {
             ) : (
               <div className="space-y-4">
                 {processedOrders.filter(o => o.status === 'ignored').map((order: any) => (
-                  <Card key={order.id} className="border-orange-200 bg-orange-50">
+                  <Card 
+                    key={order.id} 
+                    className="border-orange-200 bg-orange-50 cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => {
+                      setSelectedProcessedOrder(order);
+                      setIsProcessedOrderDetailOpen(true);
+                    }}
+                  >
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
                         <div>
@@ -453,7 +484,10 @@ export default function SupplierQuotations() {
                             </div>
                           </div>
                         </div>
-                        <Badge variant="outline" className="border-orange-500 text-orange-700">IGNORED</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="border-orange-500 text-orange-700">IGNORED</Badge>
+                          <Eye className="h-4 w-4 text-gray-500" />
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -602,6 +636,157 @@ export default function SupplierQuotations() {
                   >
                     {acceptOrderMutation.isPending ? "Submitting..." : "Submit Quotation"}
                   </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Quotation Detail Dialog */}
+        <Dialog open={isQuotationDetailOpen} onOpenChange={setIsQuotationDetailOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Quotation Details - {selectedQuotation?.quotationNumber}</DialogTitle>
+            </DialogHeader>
+            
+            {selectedQuotation && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <span className="text-sm text-gray-500">Order Number</span>
+                    <p className="font-medium">{selectedQuotation.orderNumber}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Hospital</span>
+                    <p className="font-medium">{selectedQuotation.hospitalName}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Status</span>
+                    <Badge variant={selectedQuotation.status === 'accepted' ? 'default' : 'secondary'}>
+                      {selectedQuotation.status?.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Valid Until</span>
+                    <p className="font-medium">{new Date(selectedQuotation.validUntil).toLocaleDateString()}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Medicine Details</h3>
+                  <div className="space-y-3">
+                    {selectedQuotation.items?.map((item: any, index: number) => (
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 border rounded-lg">
+                        <div>
+                          <span className="text-sm text-gray-500">Medicine</span>
+                          <p className="font-medium">{item.medicineName}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm text-gray-500">Quantity</span>
+                          <p className="font-medium">{item.quantity}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm text-gray-500">Unit Price</span>
+                          <p className="font-medium">₹{parseFloat(item.unitPrice).toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm text-gray-500">Total Price</span>
+                          <p className="font-medium">₹{parseFloat(item.totalPrice).toFixed(2)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm text-gray-500">Delivery Terms</span>
+                    <p className="font-medium">{selectedQuotation.deliveryTerms || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Payment Terms</span>
+                    <p className="font-medium">{selectedQuotation.paymentTerms || 'Not specified'}</p>
+                  </div>
+                </div>
+
+                {selectedQuotation.notes && (
+                  <div>
+                    <span className="text-sm text-gray-500">Notes</span>
+                    <p className="font-medium">{selectedQuotation.notes}</p>
+                  </div>
+                )}
+
+                <div className="text-right">
+                  <div className="text-sm text-gray-500">Total Amount</div>
+                  <div className="text-2xl font-bold text-primary">
+                    ₹{parseFloat(selectedQuotation.totalAmount || '0').toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Processed Order Detail Dialog */}
+        <Dialog open={isProcessedOrderDetailOpen} onOpenChange={setIsProcessedOrderDetailOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Order Details - {selectedProcessedOrder?.orderNumber}</DialogTitle>
+            </DialogHeader>
+            
+            {selectedProcessedOrder && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <span className="text-sm text-gray-500">Hospital</span>
+                    <p className="font-medium">{selectedProcessedOrder.hospitalName}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Required Date</span>
+                    <p className="font-medium">{new Date(selectedProcessedOrder.requiredDate).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Priority</span>
+                    <Badge variant={getPriorityColor(selectedProcessedOrder.priority)}>
+                      {selectedProcessedOrder.priority?.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Status</span>
+                    <Badge variant={
+                      selectedProcessedOrder.status === 'rejected' ? 'destructive' : 
+                      selectedProcessedOrder.status === 'ignored' ? 'outline' : 'secondary'
+                    }>
+                      {selectedProcessedOrder.status?.toUpperCase()}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Medicine Details</h3>
+                  <div className="space-y-3">
+                    {selectedProcessedOrder.items?.map((item: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center p-3 border rounded-lg">
+                        <div>
+                          <span className="font-medium">{item.medicineName}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Quantity: {item.quantity}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {selectedProcessedOrder.notes && (
+                  <div>
+                    <span className="text-sm text-gray-500">Order Notes</span>
+                    <p className="font-medium">{selectedProcessedOrder.notes}</p>
+                  </div>
+                )}
+
+                <div className="text-sm text-gray-500">
+                  Order created: {new Date(selectedProcessedOrder.createdAt).toLocaleDateString()}
                 </div>
               </div>
             )}
