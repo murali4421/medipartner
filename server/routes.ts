@@ -416,24 +416,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add new medicine to master list
   app.post('/api/medicines', async (req, res) => {
     try {
+      console.log('Received medicine data:', req.body);
+      
+      // Validate required fields
+      if (!req.body.medicineName || !req.body.brandName || !req.body.dosageForm || !req.body.strength || !req.body.composition) {
+        return res.status(400).json({ error: 'All required fields must be provided' });
+      }
+
       const medicineData = {
         name: req.body.medicineName,
         genericName: req.body.composition,
-        brand: req.body.brandName || req.body.medicineName,
-        brandName: req.body.brandName,
+        brand: req.body.brandName,
         dosageForm: req.body.dosageForm,
         strength: req.body.strength,
-        route: req.body.route,
-        category: req.body.category,
-        hsnCode: req.body.hsnCode,
-        gstPercent: req.body.gstPercent,
-        manufacturer: req.body.brandName || "Generic",
-        description: `${req.body.medicineName} - ${req.body.composition}`,
+        unitOfMeasure: req.body.dosageForm, // Use dosage form as unit of measure
       };
       
       const medicine = await storage.createMedicine(medicineData);
       res.json(medicine);
     } catch (error: any) {
+      console.error('Medicine creation error:', error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -442,25 +444,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/medicines/:id', async (req, res) => {
     try {
       const medicineId = parseInt(req.params.id);
+      console.log('Updating medicine data:', req.body);
+      
+      // Validate required fields
+      if (!req.body.medicineName || !req.body.brandName || !req.body.dosageForm || !req.body.strength || !req.body.composition) {
+        return res.status(400).json({ error: 'All required fields must be provided' });
+      }
+
       const medicineData = {
         name: req.body.medicineName,
         genericName: req.body.composition,
-        brand: req.body.brandName || req.body.medicineName,
-        brandName: req.body.brandName,
+        brand: req.body.brandName,
         dosageForm: req.body.dosageForm,
         strength: req.body.strength,
-        route: req.body.route,
-        category: req.body.category,
-        hsnCode: req.body.hsnCode,
-        gstPercent: req.body.gstPercent,
-        manufacturer: req.body.brandName || "Generic",
-        description: `${req.body.medicineName} - ${req.body.composition}`,
+        unitOfMeasure: req.body.dosageForm,
       };
       
       // Create a new medicine entry (simulating update)
       const medicine = await storage.createMedicine(medicineData);
       res.json(medicine);
     } catch (error: any) {
+      console.error('Medicine update error:', error);
       res.status(500).json({ error: error.message });
     }
   });
