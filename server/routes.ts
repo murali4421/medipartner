@@ -139,6 +139,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add new inventory item
+  app.post('/api/hospital/:id/inventory', async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const inventoryData = {
+        ...req.body,
+        hospitalId,
+        medicineId: parseInt(req.body.medicineId),
+      };
+      
+      // First check if medicine already exists in hospital inventory
+      const existingInventory = await storage.getHospitalInventory(hospitalId);
+      const existingItem = existingInventory.find((item: any) => 
+        item.medicineId === inventoryData.medicineId
+      );
+      
+      if (existingItem) {
+        return res.status(400).json({ error: 'Medicine already exists in inventory. Use edit to update.' });
+      }
+      
+      // Add to hospital inventory
+      await storage.updateHospitalStock(
+        hospitalId, 
+        inventoryData.medicineId, 
+        inventoryData.currentStock
+      );
+      
+      const updatedInventory = await storage.getHospitalInventory(hospitalId);
+      const newItem = updatedInventory.find((item: any) => 
+        item.medicineId === inventoryData.medicineId
+      );
+      
+      res.json(newItem);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update inventory item
+  app.put('/api/hospital/:id/inventory/:itemId', async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const inventoryData = {
+        ...req.body,
+        medicineId: parseInt(req.body.medicineId),
+      };
+      
+      await storage.updateHospitalStock(
+        hospitalId, 
+        inventoryData.medicineId, 
+        inventoryData.currentStock
+      );
+      
+      const updatedInventory = await storage.getHospitalInventory(hospitalId);
+      const updatedItem = updatedInventory.find((item: any) => 
+        item.medicineId === inventoryData.medicineId
+      );
+      
+      res.json(updatedItem);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete inventory item
+  app.delete('/api/hospital/:id/inventory/:itemId', async (req, res) => {
+    try {
+      const hospitalId = parseInt(req.params.id);
+      const itemId = parseInt(req.params.itemId);
+      
+      // Find the inventory item to get medicine ID
+      const inventory = await storage.getHospitalInventory(hospitalId);
+      const item = inventory.find((inv: any) => inv.id === itemId);
+      
+      if (!item) {
+        return res.status(404).json({ error: 'Inventory item not found' });
+      }
+      
+      // Set stock to 0 to effectively remove the item
+      await storage.updateHospitalStock(hospitalId, item.medicineId, 0);
+      
+      res.json({ message: 'Inventory item deleted successfully' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get('/api/hospital/:id/orders', async (req, res) => {
     try {
       const hospitalId = parseInt(req.params.id);
