@@ -53,9 +53,9 @@ export default function HospitalDashboard() {
     <HospitalLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h2 className="text-2xl font-semibold text-secondary mb-2">Hospital Dashboard</h2>
-          <p className="text-gray-600">Overview of your medicine supply and ordering system</p>
+        <div className="mb-6">
+          <h2 className="text-xl lg:text-2xl font-semibold text-secondary mb-2">Hospital Dashboard</h2>
+          <p className="text-sm lg:text-base text-gray-600">Overview of your medicine supply and ordering system</p>
         </div>
 
         {/* Key Metrics */}
