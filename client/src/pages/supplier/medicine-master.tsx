@@ -67,7 +67,7 @@ export default function MedicineMaster() {
   });
 
   // Fetch medicines
-  const { data: medicines = [], isLoading } = useQuery({
+  const { data: medicines = [], isLoading } = useQuery<any[]>({
     queryKey: ['/api/medicines'],
   });
 
@@ -429,7 +429,7 @@ export default function MedicineMaster() {
                       <TableCell className="font-medium">
                         {medicine.name || medicine.medicineName}
                       </TableCell>
-                      <TableCell>{medicine.brandName || "N/A"}</TableCell>
+                      <TableCell>{medicine.brandName || medicine.brand || "N/A"}</TableCell>
                       <TableCell>{medicine.dosageForm || "N/A"}</TableCell>
                       <TableCell>{medicine.strength || "N/A"}</TableCell>
                       <TableCell>{medicine.route || "N/A"}</TableCell>

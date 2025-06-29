@@ -34,6 +34,7 @@ export interface IStorage {
   // Medicines
   getMedicine(id: number): Promise<Medicine | undefined>;
   createMedicine(medicine: InsertMedicine): Promise<Medicine>;
+  updateMedicine(id: number, medicine: Partial<InsertMedicine>): Promise<Medicine>;
   getAllMedicines(): Promise<Medicine[]>;
   searchMedicines(query: string): Promise<Medicine[]>;
   
@@ -143,6 +144,14 @@ export class DatabaseStorage implements IStorage {
 
   async createMedicine(insertMedicine: InsertMedicine): Promise<Medicine> {
     const [medicine] = await db.insert(medicines).values(insertMedicine).returning();
+    return medicine;
+  }
+
+  async updateMedicine(id: number, updateData: Partial<InsertMedicine>): Promise<Medicine> {
+    const [medicine] = await db.update(medicines)
+      .set(updateData)
+      .where(eq(medicines.id, id))
+      .returning();
     return medicine;
   }
 

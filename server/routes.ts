@@ -427,9 +427,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: req.body.medicineName,
         genericName: req.body.composition,
         brand: req.body.brandName,
+        brandName: req.body.brandName,
         dosageForm: req.body.dosageForm,
         strength: req.body.strength,
-        unitOfMeasure: req.body.dosageForm, // Use dosage form as unit of measure
+        route: req.body.route,
+        category: req.body.category,
+        hsnCode: req.body.hsnCode,
+        gstPercent: req.body.gstPercent?.toString() || '0',
+        unitOfMeasure: req.body.dosageForm,
       };
       
       const medicine = await storage.createMedicine(medicineData);
@@ -455,13 +460,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: req.body.medicineName,
         genericName: req.body.composition,
         brand: req.body.brandName,
+        brandName: req.body.brandName,
         dosageForm: req.body.dosageForm,
         strength: req.body.strength,
+        route: req.body.route,
+        category: req.body.category,
+        hsnCode: req.body.hsnCode,
+        gstPercent: req.body.gstPercent?.toString() || '0',
         unitOfMeasure: req.body.dosageForm,
       };
       
-      // Create a new medicine entry (simulating update)
-      const medicine = await storage.createMedicine(medicineData);
+      // Update the existing medicine entry
+      const medicine = await storage.updateMedicine(medicineId, medicineData);
       res.json(medicine);
     } catch (error: any) {
       console.error('Medicine update error:', error);

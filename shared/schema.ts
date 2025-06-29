@@ -74,12 +74,17 @@ export const medicineCategories = pgTable("medicine_categories", {
 // Medicines
 export const medicines = pgTable("medicines", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  genericName: text("generic_name").notNull(),
-  brand: text("brand").notNull(),
+  name: text("name").notNull(), // Medicine Name
+  genericName: text("generic_name").notNull(), // Composition
+  brand: text("brand").notNull(), // Brand Name
+  brandName: text("brand_name"), // Alternative brand name field
   categoryId: integer("category_id").references(() => medicineCategories.id),
   strength: text("strength").notNull(),
   dosageForm: text("dosage_form").notNull(), // tablet, capsule, injection, etc.
+  route: text("route"), // Oral, IV, Topical, etc.
+  category: text("category"), // Antibiotic, Analgesic, etc.
+  hsnCode: text("hsn_code"), // HSN Code for billing
+  gstPercent: decimal("gst_percent", { precision: 5, scale: 2 }).default('0'), // GST Percentage
   unitOfMeasure: text("unit_of_measure").notNull(),
   description: text("description"),
   isActive: boolean("is_active").default(true),
