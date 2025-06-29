@@ -55,6 +55,7 @@ export interface IStorage {
   getHospitalOrders(hospitalId: number): Promise<Order[]>;
   getSupplierOrders(supplierId: number): Promise<Order[]>;
   updateOrderStatus(id: number, status: string): Promise<void>;
+  createOrderItem(item: any): Promise<any>;
   
   // Quotations
   createQuotation(quotation: InsertQuotation): Promise<Quotation>;
@@ -389,6 +390,14 @@ export class DatabaseStorage implements IStorage {
 
   async updateOrderStatus(id: number, status: string): Promise<void> {
     await db.update(orders).set({ status }).where(eq(orders.id, id));
+  }
+
+  async createOrderItem(item: any): Promise<any> {
+    const [orderItem] = await db
+      .insert(orderItems)
+      .values(item)
+      .returning();
+    return orderItem;
   }
 
   async createQuotation(insertQuotation: InsertQuotation): Promise<Quotation> {

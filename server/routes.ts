@@ -278,27 +278,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/hospital/:id/orders', async (req, res) => {
     try {
       const hospitalId = parseInt(req.params.id);
+      
+      if (!hospitalId || isNaN(hospitalId)) {
+        return res.status(400).json({ error: 'Invalid hospital ID' });
+      }
+
+      const { items, ...orderDetails } = req.body;
+      
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'Order must contain at least one item' });
+      }
+
       const orderData = {
-        ...req.body,
+        ...orderDetails,
         hospitalId,
         status: 'pending',
         priority: req.body.priority || 'standard',
+        requiredDate: new Date(req.body.requiredDate),
       };
       
       const order = await storage.createOrder(orderData);
       
+      // Create order items
+      for (const item of items) {
+        await storage.createOrderItem({
+          orderId: order.id,
+          medicineId: item.medicineId,
+          quantity: item.quantity,
+          status: 'pending'
+        });
+      }
+      
       // Broadcast to suppliers via WebSocket
       wss.clients.forEach((client) => {
-        if (client.readyState === client.OPEN) {
+        if (client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify({
             type: 'new_order',
-            data: order,
+            data: { ...order, items },
           }));
         }
       });
       
-      res.json(order);
+      res.json({ ...order, items });
     } catch (error: any) {
+      console.error('Error creating order:', error);
       res.status(500).json({ error: error.message });
     }
   });
