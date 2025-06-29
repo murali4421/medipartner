@@ -87,8 +87,11 @@ export interface IStorage {
   getHospitalSettlements(hospitalId: number): Promise<any[]>;
   createSettlement(settlement: any): Promise<any>;
   
+  
   // Supplier Order Management
   getSupplierPendingOrders(supplierId: number): Promise<any[]>;
+  getSupplierQuotations(supplierId: number): Promise<any[]>;
+  getSupplierProcessedOrders(supplierId: number): Promise<any[]>;
   createQuotationItem(item: any): Promise<any>;
 }
 
@@ -713,6 +716,89 @@ export class DatabaseStorage implements IStorage {
       .values(item)
       .returning();
     return quotationItem;
+  }
+
+  async getSupplierQuotations(supplierId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: quotations.id,
+        quotationNumber: quotations.quotationNumber,
+        orderId: quotations.orderId,
+        orderNumber: orders.orderNumber,
+        hospitalId: orders.hospitalId,
+        hospitalName: hospitals.name,
+        totalAmount: quotations.totalAmount,
+        status: quotations.status,
+        deliveryTerms: quotations.deliveryTerms,
+        paymentTerms: quotations.paymentTerms,
+        validUntil: quotations.validUntil,
+        notes: quotations.notes,
+        createdAt: quotations.createdAt,
+      })
+      .from(quotations)
+      .innerJoin(orders, eq(quotations.orderId, orders.id))
+      .innerJoin(hospitals, eq(orders.hospitalId, hospitals.id))
+      .where(eq(quotations.supplierId, supplierId))
+      .orderBy(desc(quotations.createdAt));
+
+    // Get quotation items for each quotation
+    const quotationsWithItems = await Promise.all(
+      result.map(async (quotation) => {
+        const items = await db
+          .select({
+            medicineId: quotationItems.medicineId,
+            medicineName: medicines.name,
+            quantity: quotationItems.quantity,
+            unitPrice: quotationItems.unitPrice,
+            totalPrice: quotationItems.totalPrice,
+          })
+          .from(quotationItems)
+          .innerJoin(medicines, eq(quotationItems.medicineId, medicines.id))
+          .where(eq(quotationItems.quotationId, quotation.id));
+
+        return { ...quotation, items };
+      })
+    );
+
+    return quotationsWithItems;
+  }
+
+  async getSupplierProcessedOrders(supplierId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        priority: orders.priority,
+        requiredDate: orders.requiredDate,
+        notes: orders.notes,
+        status: orders.status,
+        hospitalId: orders.hospitalId,
+        hospitalName: hospitals.name,
+        createdAt: orders.createdAt,
+      })
+      .from(orders)
+      .innerJoin(hospitals, eq(orders.hospitalId, hospitals.id))
+      .where(sql`${orders.status} IN ('rejected', 'ignored', 'quoted')`)
+      .orderBy(desc(orders.createdAt));
+
+    // Get order items for each order
+    const ordersWithItems = await Promise.all(
+      result.map(async (order) => {
+        const items = await db
+          .select({
+            medicineId: orderItems.medicineId,
+            medicineName: medicines.name,
+            quantity: orderItems.quantity,
+          })
+          .from(orderItems)
+          .innerJoin(medicines, eq(orderItems.medicineId, medicines.id))
+          .where(eq(orderItems.orderId, order.id));
+
+        return { ...order, items };
+      })
+    );
+
+    return ordersWithItems;
   }
 }
 

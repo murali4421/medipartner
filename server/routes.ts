@@ -422,8 +422,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/supplier/:id/quotations', async (req, res) => {
     try {
       const supplierId = parseInt(req.params.id);
-      const quotations = await storage.getPendingQuotations(supplierId);
+      const quotations = await storage.getSupplierQuotations(supplierId);
       res.json(quotations);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/supplier/:id/processed-orders', async (req, res) => {
+    try {
+      const supplierId = parseInt(req.params.id);
+      const processedOrders = await storage.getSupplierProcessedOrders(supplierId);
+      res.json(processedOrders);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

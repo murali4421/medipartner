@@ -47,6 +47,12 @@ export default function SupplierQuotations() {
     enabled: !!supplier?.id,
   });
 
+  // Fetch processed orders (rejected/ignored/quoted)
+  const { data: processedOrders = [], isLoading: processedLoading } = useQuery<any[]>({
+    queryKey: [`/api/supplier/${supplier?.id}/processed-orders`],
+    enabled: !!supplier?.id,
+  });
+
   // Accept order and create quotation
   const acceptOrderMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -189,9 +195,11 @@ export default function SupplierQuotations() {
         </div>
 
         <Tabs defaultValue="pending-orders" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="pending-orders">Pending Orders</TabsTrigger>
-            <TabsTrigger value="submitted-quotations">Submitted Quotations</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="pending-orders">Pending ({pendingOrders.length})</TabsTrigger>
+            <TabsTrigger value="submitted-quotations">Submitted ({submittedQuotations.length})</TabsTrigger>
+            <TabsTrigger value="rejected-orders">Rejected ({processedOrders.filter(o => o.status === 'rejected').length})</TabsTrigger>
+            <TabsTrigger value="ignored-orders">Ignored ({processedOrders.filter(o => o.status === 'ignored').length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending-orders" className="space-y-4">
@@ -335,6 +343,138 @@ export default function SupplierQuotations() {
                           <span className="text-sm text-gray-500">Valid Until</span>
                           <p className="font-medium">{new Date(quotation.validUntil).toLocaleDateString()}</p>
                         </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="rejected-orders" className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <X className="h-5 w-5 text-red-500" />
+              <h3 className="text-lg font-medium">Rejected Orders</h3>
+              <Badge variant="destructive">{processedOrders.filter(o => o.status === 'rejected').length} orders</Badge>
+            </div>
+
+            {processedOrders.filter(o => o.status === 'rejected').length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <X className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Rejected Orders</h3>
+                  <p className="text-gray-600">You haven't rejected any orders.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {processedOrders.filter(o => o.status === 'rejected').map((order: any) => (
+                  <Card key={order.id} className="border-red-200 bg-red-50">
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-lg text-red-700">
+                            Order #{order.orderNumber}
+                          </CardTitle>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <Building2 className="h-4 w-4" />
+                              <span>{order.hospitalName}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              <span>Required: {new Date(order.requiredDate).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant="destructive">REJECTED</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium mb-2">Medicine Details:</h4>
+                          <div className="space-y-2">
+                            {order.items?.map((item: any, index: number) => (
+                              <div key={index} className="flex justify-between items-center p-2 bg-white rounded">
+                                <span className="font-medium">{item.medicineName}</span>
+                                <span className="text-gray-600">Qty: {item.quantity}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {order.notes && (
+                          <div>
+                            <h4 className="font-medium mb-1">Order Notes:</h4>
+                            <p className="text-gray-600 text-sm">{order.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="ignored-orders" className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              <h3 className="text-lg font-medium">Ignored Orders</h3>
+              <Badge variant="outline" className="border-orange-500 text-orange-700">{processedOrders.filter(o => o.status === 'ignored').length} orders</Badge>
+            </div>
+
+            {processedOrders.filter(o => o.status === 'ignored').length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Ignored Orders</h3>
+                  <p className="text-gray-600">You haven't ignored any orders.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {processedOrders.filter(o => o.status === 'ignored').map((order: any) => (
+                  <Card key={order.id} className="border-orange-200 bg-orange-50">
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-lg text-orange-700">
+                            Order #{order.orderNumber}
+                          </CardTitle>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <Building2 className="h-4 w-4" />
+                              <span>{order.hospitalName}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              <span>Required: {new Date(order.requiredDate).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="border-orange-500 text-orange-700">IGNORED</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium mb-2">Medicine Details:</h4>
+                          <div className="space-y-2">
+                            {order.items?.map((item: any, index: number) => (
+                              <div key={index} className="flex justify-between items-center p-2 bg-white rounded">
+                                <span className="font-medium">{item.medicineName}</span>
+                                <span className="text-gray-600">Qty: {item.quantity}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {order.notes && (
+                          <div>
+                            <h4 className="font-medium mb-1">Order Notes:</h4>
+                            <p className="text-gray-600 text-sm">{order.notes}</p>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
