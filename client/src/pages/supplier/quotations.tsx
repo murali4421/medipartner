@@ -337,7 +337,7 @@ export default function SupplierQuotations() {
                         </div>
                         <div>
                           <span className="text-sm text-gray-500">Total Amount</span>
-                          <p className="font-medium">₹{quotation.totalAmount?.toFixed(2)}</p>
+                          <p className="font-medium">₹{parseFloat(quotation.totalAmount || '0').toFixed(2)}</p>
                         </div>
                         <div>
                           <span className="text-sm text-gray-500">Valid Until</span>
