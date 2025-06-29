@@ -37,37 +37,37 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-neutral">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-gray-50 to-green-100">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white/90 backdrop-blur-md shadow-lg border-b border-green-100">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center">
-            <div className="bg-success rounded-lg p-2 mr-3">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-3 mr-4 shadow-lg">
               <Truck className="text-white text-xl" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-secondary">Medi Partner</h1>
-              <p className="text-sm text-gray-500">Supplier Management System</p>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">Medi Partner</h1>
+              <p className="text-sm text-gray-600 font-medium">Supplier Management System</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+            <Button variant="ghost" size="sm" className="relative hover:bg-green-50 transition-colors">
+              <Bell className="h-5 w-5 text-gray-600" />
+              <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center shadow-lg animate-pulse">
                 5
               </span>
             </Button>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-white text-sm font-bold">
                   {supplier?.name?.[0]}{supplier?.name?.[1]}
                 </span>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium text-secondary">{supplier?.name}</p>
-                <p className="text-xs text-gray-500">{user?.role}</p>
+                <p className="text-sm font-semibold text-gray-800">{supplier?.name}</p>
+                <p className="text-xs text-green-600 font-medium capitalize">{user?.role}</p>
               </div>
-              <Button variant="ghost" size="sm" onClick={logout}>
+              <Button variant="ghost" size="sm" onClick={logout} className="hover:bg-red-50 hover:text-red-600 transition-colors">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -77,20 +77,24 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
 
       <div className="flex">
         {/* Sidebar */}
-        <nav className="w-64 bg-white shadow-sm min-h-screen">
+        <nav className="w-64 bg-white/80 backdrop-blur-md shadow-xl border-r border-green-100 min-h-screen">
           <div className="p-6">
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-secondary">{supplier?.name}</h2>
-              <p className="text-sm text-gray-500">{supplier?.city}, {supplier?.state}</p>
+            <div className="mb-8 p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200">
+              <h2 className="text-lg font-bold text-gray-800">{supplier?.name}</h2>
+              <p className="text-sm text-green-600 font-medium">{supplier?.city}, {supplier?.state}</p>
             </div>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {navigation.map((item) => {
                 const isActive = location === item.href;
                 return (
                   <li key={item.name}>
                     <Link href={item.href}>
-                      <a className={isActive ? 'sidebar-link-active' : 'sidebar-link'}>
-                        <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-success' : ''}`} />
+                      <a className={`flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                        isActive 
+                          ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg transform scale-105" 
+                          : "text-gray-700 hover:bg-green-50 hover:text-green-700 hover:translate-x-1"
+                      }`}>
+                        <item.icon className="mr-3 h-5 w-5" />
                         {item.name}
                       </a>
                     </Link>

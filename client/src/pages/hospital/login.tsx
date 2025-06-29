@@ -43,14 +43,14 @@ export default function HospitalLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-            <Hospital className="w-8 h-8 text-primary" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-white/80 backdrop-blur-md shadow-2xl border-0">
+        <CardHeader className="text-center pb-8">
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Hospital className="w-10 h-10 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold text-secondary">Hospital Portal</CardTitle>
-          <p className="text-gray-600">Sign in to access your hospital management system</p>
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mb-2">Hospital Portal</CardTitle>
+          <p className="text-gray-600 text-lg">Sign in to access your hospital management system</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
