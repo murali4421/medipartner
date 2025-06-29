@@ -47,13 +47,13 @@ export default function HospitalInventory() {
   const [editingItem, setEditingItem] = useState<any>(null);
 
   // Fetch inventory data
-  const { data: inventory, isLoading } = useQuery({
+  const { data: inventory = [], isLoading } = useQuery<any[]>({
     queryKey: [`/api/hospital/${hospital?.id}/inventory`],
     enabled: !!hospital?.id,
   });
 
   // Fetch medicines for dropdown
-  const { data: medicines } = useQuery({
+  const { data: medicines = [] } = useQuery<any[]>({
     queryKey: ['/api/medicines'],
     enabled: !!hospital?.id,
   });
@@ -175,11 +175,11 @@ export default function HospitalInventory() {
     },
   });
 
-  const filteredInventory = (inventory || []).filter((item: any) =>
+  const filteredInventory = inventory.filter((item: any) =>
     item.medicineName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.genericName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.brand?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   const getStockStatus = (current: number, reorder: number) => {
     if (current <= reorder) {
@@ -277,7 +277,17 @@ export default function HospitalInventory() {
                             <SelectContent>
                               {(medicines || []).map((medicine: any) => (
                                 <SelectItem key={medicine.id} value={medicine.id.toString()}>
-                                  {medicine.name} - {medicine.genericName}
+                                  <div className="flex flex-col py-1">
+                                    <div className="font-medium text-sm">
+                                      {medicine.name || medicine.medicineName}
+                                    </div>
+                                    <div className="text-xs text-gray-600">
+                                      <span className="font-medium">{medicine.brandName || medicine.brand}</span>
+                                      {(medicine.dosageForm || medicine.strength) && (
+                                        <span> | {medicine.dosageForm} | {medicine.strength}</span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -466,7 +476,17 @@ export default function HospitalInventory() {
                             <SelectContent>
                               {(medicines || []).map((medicine: any) => (
                                 <SelectItem key={medicine.id} value={medicine.id.toString()}>
-                                  {medicine.name} - {medicine.genericName}
+                                  <div className="flex flex-col py-1">
+                                    <div className="font-medium text-sm">
+                                      {medicine.name || medicine.medicineName}
+                                    </div>
+                                    <div className="text-xs text-gray-600">
+                                      <span className="font-medium">{medicine.brandName || medicine.brand}</span>
+                                      {(medicine.dosageForm || medicine.strength) && (
+                                        <span> | {medicine.dosageForm} | {medicine.strength}</span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </SelectItem>
                               ))}
                             </SelectContent>
