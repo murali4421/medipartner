@@ -613,5 +613,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Supplier Order Management Routes
+  app.get('/api/supplier/:id/pending-orders', async (req, res) => {
+    try {
+      const supplierId = parseInt(req.params.id);
+      const pendingOrders = await storage.getSupplierPendingOrders(supplierId);
+      res.json(pendingOrders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/supplier/:id/orders/:orderId/accept', async (req, res) => {
+    try {
+      const supplierId = parseInt(req.params.id);
+      const orderId = parseInt(req.params.orderId);
+      const { items, deliveryTerms, paymentTerms, notes, validUntil } = req.body;
+
+      // Create quotation
+      const quotationData = {
+        orderId,
+        supplierId,
+        totalAmount: items.reduce((sum: number, item: any) => sum + item.totalPrice, 0),
+        deliveryTerms,
+        paymentTerms,
+        notes,
+        validUntil: new Date(validUntil),
+        status: 'submitted',
+      };
+
+      const quotation = await storage.createQuotation(quotationData);
+
+      // Create quotation items
+      for (const item of items) {
+        await storage.createQuotationItem({
+          quotationId: quotation.id,
+          medicineId: item.medicineId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+        });
+      }
+
+      // Update order status
+      await storage.updateOrderStatus(orderId, 'quoted');
+
+      // Broadcast to hospital via WebSocket
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'quotation_received',
+            data: { ...quotation, items },
+          }));
+        }
+      });
+
+      res.json(quotation);
+    } catch (error: any) {
+      console.error('Error accepting order:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/supplier/:id/orders/:orderId/reject', async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      await storage.updateOrderStatus(orderId, 'rejected');
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/supplier/:id/orders/:orderId/ignore', async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      await storage.updateOrderStatus(orderId, 'ignored');
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }

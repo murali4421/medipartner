@@ -86,6 +86,10 @@ export interface IStorage {
   // Settlements
   getHospitalSettlements(hospitalId: number): Promise<any[]>;
   createSettlement(settlement: any): Promise<any>;
+  
+  // Supplier Order Management
+  getSupplierPendingOrders(supplierId: number): Promise<any[]>;
+  createQuotationItem(item: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -630,8 +634,8 @@ export class DatabaseStorage implements IStorage {
       .select({
         supplierId: supplierInventory.supplierId,
         medicineId: supplierInventory.medicineId,
-        quantity: supplierInventory.quantity,
-        price: supplierInventory.price,
+        quantity: supplierInventory.availableStock,
+        price: supplierInventory.unitPrice,
         medicineName: medicines.name,
         brandName: medicines.brandName,
         dosageForm: medicines.dosageForm,
@@ -641,7 +645,7 @@ export class DatabaseStorage implements IStorage {
       .from(supplierInventory)
       .innerJoin(medicines, eq(supplierInventory.medicineId, medicines.id))
       .innerJoin(suppliers, eq(supplierInventory.supplierId, suppliers.id))
-      .where(sql`${supplierInventory.quantity} > 0`)
+      .where(sql`${supplierInventory.availableStock} > 0`)
       .orderBy(suppliers.name, medicines.name);
 
     return result;
@@ -663,6 +667,52 @@ export class DatabaseStorage implements IStorage {
       updatedAt: new Date(),
     };
     return mockSettlement;
+  }
+
+  async getSupplierPendingOrders(supplierId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        priority: orders.priority,
+        requiredDate: orders.requiredDate,
+        notes: orders.notes,
+        status: orders.status,
+        hospitalId: orders.hospitalId,
+        hospitalName: hospitals.name,
+        createdAt: orders.createdAt,
+      })
+      .from(orders)
+      .innerJoin(hospitals, eq(orders.hospitalId, hospitals.id))
+      .where(eq(orders.status, 'pending'))
+      .orderBy(desc(orders.createdAt));
+
+    // Get order items for each order
+    const ordersWithItems = await Promise.all(
+      result.map(async (order) => {
+        const items = await db
+          .select({
+            medicineId: orderItems.medicineId,
+            medicineName: medicines.name,
+            quantity: orderItems.quantity,
+          })
+          .from(orderItems)
+          .innerJoin(medicines, eq(orderItems.medicineId, medicines.id))
+          .where(eq(orderItems.orderId, order.id));
+
+        return { ...order, items };
+      })
+    );
+
+    return ordersWithItems;
+  }
+
+  async createQuotationItem(item: any): Promise<any> {
+    const [quotationItem] = await db
+      .insert(quotationItems)
+      .values(item)
+      .returning();
+    return quotationItem;
   }
 }
 

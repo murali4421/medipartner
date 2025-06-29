@@ -111,6 +111,9 @@ MedSupply Pro is a comprehensive medicine supply chain management system designe
 
 ## Changelog
 
+- June 29, 2025. Complete order-to-quotation workflow implementation with hospital order creation, supplier quotation management, accept/reject/ignore functionality, and real-time WebSocket notifications
+- June 29, 2025. Supplier medicine availability display in hospital portal with stock levels, pricing, and supplier details
+- June 29, 2025. Settlement management system with payment tracking, multiple payment methods, and comprehensive settlement records
 - June 29, 2025. Complete mobile responsiveness implementation with collapsible sidebars, responsive grid layouts, mobile-optimized navigation, and touch-friendly interface elements
 - June 29, 2025. Major UI optimization with modern design system, gradient backgrounds, enhanced animations, and improved visual hierarchy
 - June 28, 2025. Initial setup
